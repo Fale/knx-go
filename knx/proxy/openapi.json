@@ -1,0 +1,326 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "KNX Proxy API",
+    "version": "1.0.0",
+    "description": "REST interface for interacting with KNX group addresses via knxproxy."
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy"
+          }
+        }
+      }
+    },
+    "/v1/group": {
+      "post": {
+        "summary": "Send a KNX group command",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Command accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "description": "Invalid request"
+          },
+          "5XX": {
+            "description": "KNX gateway error"
+          }
+        }
+      }
+    },
+    "/v1/group/{groupId}": {
+      "get": {
+        "summary": "Issue a KNX group read",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Group address (1/2/3) or catalog name"
+          },
+          {
+            "name": "timeout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Duration to wait for a response"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Group response received",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Group not found"
+          },
+          "504": {
+            "description": "Timeout waiting for group response"
+          }
+        }
+      }
+    },
+    "/v1/group/{groupId}/latest": {
+      "get": {
+        "summary": "Fetch the latest recorded value",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Group address (1/2/3) or catalog name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest event",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No event history available"
+          }
+        }
+      }
+    },
+    "/v1/group/{groupId}/history": {
+      "get": {
+        "summary": "Fetch historical events",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Group address (1/2/3) or catalog name"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Maximum number of events to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historical events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No event history available"
+          }
+        }
+      }
+    },
+    "/v1/groups": {
+      "get": {
+        "summary": "List known catalog groups",
+        "responses": {
+          "200": {
+            "description": "Catalog entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupInfo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "summary": "Retrieve recently observed events",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "Maximum number of events to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GroupRequest": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "KNX group command (write, read, response)"
+          },
+          "destination": {
+            "type": "string",
+            "description": "Group address (1/2/3) or catalog name"
+          },
+          "source": {
+            "type": "string",
+            "description": "Optional source individual address"
+          },
+          "data": {
+            "type": "string",
+            "format": "byte",
+            "description": "Encoded group data"
+          },
+          "wait_for_response": {
+            "type": "boolean",
+            "description": "Wait for the next response after sending"
+          },
+          "timeout": {
+            "type": "string",
+            "description": "Duration to wait for responses"
+          }
+        },
+        "required": [
+          "command",
+          "destination"
+        ]
+      },
+      "GroupResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "event": {
+            "$ref": "#/components/schemas/Event"
+          }
+        }
+      },
+      "GroupInfo": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dpts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "command": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "destination": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string",
+            "format": "byte"
+          },
+          "group": {
+            "type": "string"
+          },
+          "dpt": {
+            "type": "string"
+          },
+          "decoded": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

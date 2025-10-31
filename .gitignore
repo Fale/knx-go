@@ -1,4 +1,7 @@
 cover.out
+cmd/gaeTest/gaeTest
 cmd/knxbridge/knxbridge
 cmd/knxctl/knxctl
+cmd/knxctl2/knxctl2
+cmd/knxproxy/knxproxy
 helpers/

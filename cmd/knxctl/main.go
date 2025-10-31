@@ -23,6 +23,13 @@ var (
 	postgresqlDSN   string
 	configPath      string
 	envFile         string
+
+	serveListenAddr  string
+	serveEventLimit  int
+	serveLogEvents   bool
+	serveGroupFile   string
+	serveTimeout     time.Duration = 5 * time.Second
+	serveDatabaseURL string
 )
 
 var root = &cobra.Command{
